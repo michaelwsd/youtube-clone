@@ -7,6 +7,6 @@
       "strict": true,
       "esModuleInterop": true
     },
-    "include": ["src/**/*.ts"], // include all ts files within source directory
-    "exclude": ["node_modules"] 
-  }
+    "include": ["src/**/*.ts"],
+    "exclude": ["node_modules"]
+}
