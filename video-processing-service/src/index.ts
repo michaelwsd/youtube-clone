@@ -1,5 +1,16 @@
-import express from "express";
+import express, { Request, Response} from "express";
 import ffmpeg from "fluent-ffmpeg"; // this is just a wrapper, we need the actual library
+import { 
+    uploadProcessedVideo,
+    downloadRawVideo,
+    deleteRawVideo,
+    deleteProcessedVideo,
+    convertVideo,
+    setUpDirectories
+  } from './storage';
+
+// set up directories
+setUpDirectories();
 
 const app = express();
 /*
@@ -11,26 +22,46 @@ app.use(express.json());
 
 // This defines a route handler for POST requests made to the /process-video endpoint
 // req includes the body, headers, etc, res sends a response back to the client
-app.post('/process-video', (req, res) => {
-    // specifies the parameters we need in the request body, and retrieve them
-    const inputFilePath = req.body.inputFilePath; // file path of the video to be processed
-    const outputFilePath = req.body.outputFilePath; // retrieves the path where the processed video will be saved
+app.post('/process-video', async (req, res): Promise<any> => {
+    let data;
+    try {
+        const message = Buffer.from(req.body.message.data, 'base64').toString('utf8');
+        data = JSON.parse(message); // get the file name 
+        if (!data.name) {
+            throw new Error('Invalid message payload received.');
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(400).send('Bad Request: Missing Filename.');
+    }
 
-    // mandates the inputs 
-    if (!inputFilePath || !outputFilePath) res.status(400).send('Bad Request: Missing file path');
+    const inputFileName = data.name;
+    const outputFileName = `processed-${inputFileName}`;
 
-    // convert video 
-    ffmpeg(inputFilePath)
-        .outputOptions('-vf', 'scale=-1:360') // specifies video file and 360p
-        .on('end', function() { // specifies what happens when process finishes
-            console.log('Processing finished successfully');
-            res.status(200).send('Processing finished successfully');
-        }) 
-        .on('error', function(err: any) { // what to do with error, sometimes can be caused by memory overhead with video file size
-            console.log('An error occurred: ' + err.message);
-            res.status(500).send('An error occurred: ' + err.message);
-        })
-        .save(outputFilePath);
+    // download raw video from cloud storage
+    await downloadRawVideo(inputFileName);
+
+    // process video into 360p
+    try {
+        await convertVideo(inputFileName, outputFileName)
+    } catch (err) {
+        // if error occurs, process two asynchronous operations concurrently
+        // in this case, delete downloaded/potentially processed videos
+        await Promise.all([
+            deleteRawVideo(inputFileName),
+            deleteProcessedVideo(outputFileName)
+        ]);
+        return res.status(500).send('Process failed.');
+    }
+
+    // upload the processed video to the cloud storage
+    await uploadProcessedVideo(outputFileName);
+    await Promise.all([
+        deleteRawVideo(inputFileName),
+        deleteProcessedVideo(outputFileName)
+    ]);
+
+    return res.status(200).send('Processing finished successfully.');
 })
 
 /*
