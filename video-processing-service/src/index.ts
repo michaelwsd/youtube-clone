@@ -1,5 +1,4 @@
-import express, { Request, Response} from "express";
-import ffmpeg from "fluent-ffmpeg"; // this is just a wrapper, we need the actual library
+import express from "express";
 import { 
     uploadProcessedVideo,
     downloadRawVideo,

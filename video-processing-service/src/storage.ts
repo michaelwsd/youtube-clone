@@ -18,7 +18,7 @@ const localProcessedVideoPath = "./processed-videos"; // processed videos stored
 
 // Create local directories for raw and processed videos 
 export function setUpDirectories() {
-    ensureDirectoryExistence(localProcessedVideoPath);
+    ensureDirectoryExistence(localRawVideoPath);
     ensureDirectoryExistence(localProcessedVideoPath);
 }
 
@@ -70,7 +70,7 @@ export async function uploadProcessedVideo(fileName: string) {
     const bucket = storage.bucket(processedVideoBucketName);
 
     // Upload video to this bucket
-    await bucket.upload(`${localRawVideoPath}/${fileName}`, {
+    await bucket.upload(`${localProcessedVideoPath}/${fileName}`, {
         destination: fileName
     });
     

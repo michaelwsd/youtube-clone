@@ -1,31 +1,41 @@
-# Builder a docker image for development (not production) purposes
+# Stage 1: Build stage
+FROM node:18 AS builder
 
-# specifies the base image for the container
-FROM node:18
-
-# specify working directory in the container, commands will be executed relative to this directory
+# Set the working directory in the container to /app
 WORKDIR /app
 
-# install ffmpeg
-# apt-get is the command to install, update or remove software packages on Ubuntu (Debian-based distribution)
-RUN apt-get update && apt-get install -y ffmpeg 
+# Copy package.json and package-lock.json into the working directory
+COPY package*.json ./
 
-# copy files from package.json and package-lock.json
-COPY package*.json .
-
-# install all dependencies listed in package.json into the container
-# run this after copying package.json
+# Install any needed packages specified in package.json
 RUN npm install
 
-# copy all remaining application files into the container's working directory
-# first . is the source location, where Dockerfile is located
-# second . is the destination inside the Docker image, which is /app
+# Bundle app source inside the docker image
 COPY . .
 
-# inform Docker that container will listen on port 3000
-EXPOSE 3000 
+# Build the app
+RUN npm run build
 
-# run app (running app is CMD, execute commands is RUN, only one CMD allowed)
-CMD ["npm", "start"]
+# Stage 2: Production stage
+FROM node:18
 
+# Install ffmpeg in the container
+RUN apt-get update && apt-get install -y ffmpeg
 
+# Set the working directory
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm install --only=production
+
+# Copy built app from the builder stage
+COPY --from=builder /app/dist ./dist
+
+# Make port 3000 available to the world outside this container
+EXPOSE 3000
+
+# Define the command to run your app using CMD which defines your runtime
+CMD [ "npm", "run", "serve" ]
