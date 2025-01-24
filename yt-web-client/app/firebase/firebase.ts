@@ -33,8 +33,11 @@ export function signInWithGoogle() {
 
   /**
  * Trigger a callback when user auth state changes.
+ * This function tracks the user's authentication state. (logged in or logged out)
  * @returns A function to unsubscribe callback.
  */
 export function onAuthStateChangedHelper(callback: (user: User | null) => void) {
+    // callback function is invoked whenever the authentication state changes
+    // receives a user object if user is signed in, null if user is signed out
     return onAuthStateChanged(auth, callback);
   }
