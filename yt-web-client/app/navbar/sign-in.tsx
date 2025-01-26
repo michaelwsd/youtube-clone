@@ -8,6 +8,7 @@ interface SignInProps {
     user: User | null;
 }
 
+// takes in a user which would be a user object or null, render the page accordingly
 export default function SignIn({ user }: SignInProps) {
     return (
         <Fragment>
