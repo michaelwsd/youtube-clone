@@ -7,6 +7,7 @@ import SignIn from "./sign-in";
 import { onAuthStateChangedHelper } from "../firebase/firebase";
 import { useEffect, useState } from "react";
 import { User } from "firebase/auth";
+import Upload from "./upload";
 
 // this is a react server component, components will render on the server then displayed in browser
 // react compoent is simply a function that returns a part of the UI of a web application
@@ -30,10 +31,13 @@ export default function Navbar() {
     return (
         <nav className={styles.nav}>
             <Link href="/">
-                {/* react element, we can just put a / because by default it will look for images inside the public directory */}
-                <Image width={90} height={20} src="/youtube-logo.svg" alt="YouTube Logo"/>
+            <Image width={90} height={20}
+                src="/youtube-logo.svg" alt="YouTube Logo"/>
             </Link>
-            <SignIn user={user}/>
+            { 
+            user && <Upload />
+            }
+            <SignIn user={user} />
         </nav>
-    );
+        );
 }
